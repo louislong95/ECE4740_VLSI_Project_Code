@@ -1,0 +1,9 @@
+// VerilogA for build_yyyy, reg_sigen, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module reg_sigen;
+
+
+endmodule

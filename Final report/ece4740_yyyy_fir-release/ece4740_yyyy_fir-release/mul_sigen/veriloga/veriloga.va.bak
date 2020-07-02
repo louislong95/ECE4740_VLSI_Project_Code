@@ -1,0 +1,219 @@
+// VerilogA for ece4740_yyyy_fir, multb_sigen, veriloga
+`include "constants.vams"
+`include "disciplines.vams"
+
+// hexdecimal codebook 
+`define H0  lo,lo,lo,lo
+`define H1  hi,lo,lo,lo
+`define H2  lo,hi,lo,lo
+`define H3  hi,hi,lo,lo
+`define H4  lo,lo,hi,lo
+`define H5  hi,lo,hi,lo
+`define H6  lo,hi,hi,lo
+`define H7  hi,hi,hi,lo
+`define H8  lo,lo,lo,hi
+`define H9  hi,lo,lo,hi
+`define HA  lo,hi,lo,hi
+`define HB  hi,hi,lo,hi
+`define HC  lo,lo,hi,hi
+`define HD  hi,lo,hi,hi
+`define HE  lo,hi,hi,hi
+`define HF  hi,hi,hi,hi
+
+module mul_sigen(A,B);
+	output [0:15] A;
+	output [0:7] B;
+	voltage [0:15] A;
+	voltage [0:7] B;
+	parameter real hi = 1.2;
+	parameter real lo = 0.0;
+	parameter real tr = 10p from (0:inf);
+	parameter real tf = 10p from (0:inf);
+	parameter real cp = 10n  from (0:inf);
+	real Atemp[0:15];
+	real Btemp[0:7];
+
+	//----------------------------------------------------------
+	// test case list
+	//----------------------------------------------------------
+	//k0: basic0
+	real k0_A[0:15] ={`H4,`H3,`H2,`H1};
+	real k0_B[0:7] ={`H1,`H0};
+	//k1: basic1
+	real k1_A[0:15] ={`H6,`H1,`H2,`H7};
+	real k1_B[0:7] ={`H2,`H1};
+	//k2: basic2
+	real k2_A[0:15] ={`HD,`HA,`HE,`HD};
+	real k2_B[0:7] ={`H3,`H3};
+	//k3: basic3
+	real k3_A[0:15] ={`HF,`HE,`HE,`HB};
+	real k3_B[0:7] ={`HF,`HF};
+	//k4: basic4
+	real k4_A[0:15] ={`HE,`HC,`HA,`HF};
+	real k4_B[0:7] ={`H0,`H0};
+	//k5: basic5
+	real k5_A[0:15] ={`HF,`HF,`HF,`HF};
+	real k5_B[0:7] ={`HF,`HF};
+	//k6: basic6
+	real k6_A[0:15] ={`HE,`HD,`H2,`H3};
+	real k6_B[0:7] ={`H9,`H4};
+	//k7: basic7
+	real k7_A[0:15] ={`H4,`H7,`H8,`H1};
+	real k7_B[0:7] ={`H9,`H9};
+	//k8: basic8
+	real k8_A[0:15] ={`H3,`H7,`H5,`H1};
+	real k8_B[0:7] ={`HA,`HA};
+	//k9: basic9
+	real k9_A[0:15] ={`HA,`HC,`HE,`HD};
+	real k9_B[0:7] ={`HC,`HA};
+
+	//----------------------------------------------------------
+	// test case sequence
+	//----------------------------------------------------------
+	real k0_next = 1;
+	real k1_next = 2;
+	real k2_next = 3;
+	real k3_next = 4;
+	real k4_next = 5;
+	real k5_next = 6;
+	real k6_next = 7;
+	real k7_next = 8;
+	real k8_next = 9;
+	real k9_next = 0;
+
+	//----------------------------------------------------------
+	// test source
+	//----------------------------------------------------------
+	// case counter
+	real k = 0;
+	genvar i;
+	integer x;
+	analog begin
+
+		// initial value and reset
+		@(initial_step) begin
+			for(x=0;x<16;x=x+1) begin
+				Atemp[x] = lo;
+			end
+			for(x=0;x<8;x=x+1) begin
+				Btemp[x] = lo;
+			end
+			k = 999;
+		end
+
+		// test stimulus
+		@(timer(0n,cp))	begin
+			case(k)
+			0: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k0_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k0_B[x];
+				end
+				k = k0_next;
+			end
+			1: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k1_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k1_B[x];
+				end
+				k = k1_next;
+			end
+			2: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k2_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k2_B[x];
+				end
+				k = k2_next;
+			end
+			3: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k3_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k3_B[x];
+				end
+				k = k3_next;
+			end
+			4: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k4_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k4_B[x];
+				end
+				k = k4_next;
+			end
+			5: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k5_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k5_B[x];
+				end
+				k = k5_next;
+			end
+			6: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k6_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k6_B[x];
+				end
+				k = k6_next;
+			end
+			7: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k7_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k7_B[x];
+				end
+				k = k7_next;
+			end
+			8: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k8_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k8_B[x];
+				end
+				k = k8_next;
+			end
+			9: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k9_A[x];
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = k9_B[x];
+				end
+				k = k9_next;
+			end
+			default: begin // used for reset
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = lo;
+				end
+				for(x=0;x<8;x=x+1) begin
+					Btemp[x] = lo;
+				end
+				k = 0;
+			end
+			endcase
+		end
+
+		// output DAC
+		for(i=0;i<16;i=i+1) begin
+			V(A[i]) <+ transition(Atemp[i], 0, tr, tf);
+		end
+		for(i=0;i<8;i=i+1) begin
+			V(B[i]) <+ transition(Btemp[i], 0, tr, tf);
+		end
+
+	end
+
+endmodule

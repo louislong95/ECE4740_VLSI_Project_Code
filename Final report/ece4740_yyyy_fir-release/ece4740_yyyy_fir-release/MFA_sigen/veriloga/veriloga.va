@@ -1,0 +1,60 @@
+// VerilogA for build-yyyy, MFA_sigen, veriloga
+
+`include "constants.vams"
+`include "disciplines.vams"
+
+module MFA_sigen(A,B,C);
+output  A,B,C;
+voltage A,B,C;
+
+real		Atemp, Btemp, Ctemp;
+parameter real	cpA = 1000p from (0:inf);
+parameter real	cpB = 500p from (0:inf);
+parameter real	cpC = 250p from (0:inf);
+parameter real	clk_high = 1.2;
+parameter real	clk_low = 0.0;
+parameter real	trise = 20p from [0:inf];
+parameter real	tfall = 20p from [0:inf];
+
+analog begin
+
+	@(initial_step) begin
+		Atemp = 0;
+		Btemp = 0;
+		Ctemp = 0;
+	end
+
+	@(timer(0n,cpA))	begin
+		if (Atemp==0) begin 
+			Atemp = clk_high;
+		end
+		else begin
+			Atemp = clk_low;
+		end
+	end
+
+	@(timer(0n,cpB)) begin
+		if (Btemp==0) begin 
+			Btemp = clk_high;
+		end
+		else begin
+			Btemp = clk_low;
+		end
+	end
+	
+	@(timer(0n,cpC)) begin
+		if (Ctemp==0) begin 
+			Ctemp = clk_high;
+		end
+		else begin
+			Ctemp = clk_low;
+		end
+	end
+
+	V(A)	 <+ transition(Atemp, 0, trise, tfall);
+	V(B)	 <+ transition(Btemp, 0, trise, tfall);
+	V(C)	 <+ transition(Ctemp, 0, trise, tfall);
+	
+end
+
+endmodule

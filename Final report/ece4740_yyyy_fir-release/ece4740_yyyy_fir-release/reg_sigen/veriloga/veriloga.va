@@ -1,0 +1,185 @@
+// VerilogA for ece4740_yyyy_fir, multb_sigen, veriloga
+`include "constants.vams"
+`include "disciplines.vams"
+
+// hexdecimal codebook 
+`define H0  lo,lo,lo,lo
+`define H1  hi,lo,lo,lo
+`define H2  lo,hi,lo,lo
+`define H3  hi,hi,lo,lo
+`define H4  lo,lo,hi,lo
+`define H5  hi,lo,hi,lo
+`define H6  lo,hi,hi,lo
+`define H7  hi,hi,hi,lo
+`define H8  lo,lo,lo,hi
+`define H9  hi,lo,lo,hi
+`define HA  lo,hi,lo,hi
+`define HB  hi,hi,lo,hi
+`define HC  lo,lo,hi,hi
+`define HD  hi,lo,hi,hi
+`define HE  lo,hi,hi,hi
+`define HF  hi,hi,hi,hi
+
+module reg_sigen(A);
+	output [0:15] A;
+	voltage [0:15] A;
+	parameter real hi = 1.2;
+	parameter real lo = 0.0;
+	parameter real tr = 10p from (0:inf);
+	parameter real tf = 10p from (0:inf);
+	parameter real cp = 10n  from (0:inf);
+	real Atemp[0:15];
+
+	//----------------------------------------------------------
+	// test case list
+	//----------------------------------------------------------
+	//k0: basic0
+	real k0_A[0:15] ={`HF,`HF,`HF,`HF};
+	//k1: basic1
+	real k1_A[0:15] ={`H0,`H0,`H0,`H0};
+	//k2: random0
+	real k2_A[0:15] ={`HD,`H7,`H3,`H0};
+	//k3: random1
+	real k3_A[0:15] ={`HF,`H0,`HF,`HE};
+	//k4: random2
+	real k4_A[0:15] ={`H0,`H9,`H1,`H5};
+	//k5: random3
+	real k5_A[0:15] ={`H3,`H7,`H2,`H3};
+	//k6: random4
+	real k6_A[0:15] ={`H8,`HF,`H9,`HA};
+	//k7: random5
+	real k7_A[0:15] ={`HE,`H3,`HF,`HD};
+	//k8: random6
+	real k8_A[0:15] ={`H6,`HA,`H7,`H4};
+	//k9: random7
+	real k9_A[0:15] ={`H3,`HA,`H1,`H7};
+	//k10: random8
+	real k10_A[0:15] ={`H3,`H7,`HC,`HD};
+	//k11: random9
+	real k11_A[0:15] ={`HC,`H9,`H4,`H4};
+
+	//----------------------------------------------------------
+	// test case sequence
+	//----------------------------------------------------------
+	real k0_next = 1;
+	real k1_next = 2;
+	real k2_next = 3;
+	real k3_next = 4;
+	real k4_next = 5;
+	real k5_next = 6;
+	real k6_next = 7;
+	real k7_next = 8;
+	real k8_next = 9;
+	real k9_next = 10;
+	real k10_next = 11;
+	real k11_next = 0;
+
+	//----------------------------------------------------------
+	// test source
+	//----------------------------------------------------------
+	// case counter
+	real k = 0;
+	genvar i;
+	integer x;
+	analog begin
+
+		// initial value and reset
+		@(initial_step) begin
+			for(x=0;x<16;x=x+1) begin
+				Atemp[x] = lo;
+			end
+			k = 999;
+		end
+
+		// test stimulus
+		@(timer(0n,cp))	begin
+			case(k)
+			0: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k0_A[x];
+				end
+				k = k0_next;
+			end
+			1: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k1_A[x];
+				end
+				k = k1_next;
+			end
+			2: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k2_A[x];
+				end
+				k = k2_next;
+			end
+			3: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k3_A[x];
+				end
+				k = k3_next;
+			end
+			4: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k4_A[x];
+				end
+				k = k4_next;
+			end
+			5: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k5_A[x];
+				end
+				k = k5_next;
+			end
+			6: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k6_A[x];
+				end
+				k = k6_next;
+			end
+			7: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k7_A[x];
+				end
+				k = k7_next;
+			end
+			8: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k8_A[x];
+				end
+				k = k8_next;
+			end
+			9: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k9_A[x];
+				end
+				k = k9_next;
+			end
+			10: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k10_A[x];
+				end
+				k = k10_next;
+			end
+			11: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k11_A[x];
+				end
+				k = k11_next;
+			end
+			default: begin // used for reset
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = lo;
+				end
+				k = 0;
+			end
+			endcase
+		end
+
+		// output DAC
+		for(i=0;i<16;i=i+1) begin
+			V(A[i]) <+ transition(Atemp[i], 0, tr, tf);
+		end
+
+	end
+
+endmodule

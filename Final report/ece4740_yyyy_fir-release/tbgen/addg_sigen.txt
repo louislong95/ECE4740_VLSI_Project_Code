@@ -1,0 +1,395 @@
+// VerilogA for ece4740_yyyy_fir, multb_sigen, veriloga
+`include "constants.vams"
+`include "disciplines.vams"
+
+// hexdecimal codebook 
+`define H0  lo,lo,lo,lo
+`define H1  hi,lo,lo,lo
+`define H2  lo,hi,lo,lo
+`define H3  hi,hi,lo,lo
+`define H4  lo,lo,hi,lo
+`define H5  hi,lo,hi,lo
+`define H6  lo,hi,hi,lo
+`define H7  hi,hi,hi,lo
+`define H8  lo,lo,lo,hi
+`define H9  hi,lo,lo,hi
+`define HA  lo,hi,lo,hi
+`define HB  hi,hi,lo,hi
+`define HC  lo,lo,hi,hi
+`define HD  hi,lo,hi,hi
+`define HE  lo,hi,hi,hi
+`define HF  hi,hi,hi,hi
+
+module addg_sigen(A,B,C,D);
+	output [0:15] A;
+	output [0:15] B;
+	output [0:15] C;
+	output [0:15] D;
+	voltage [0:15] A;
+	voltage [0:15] B;
+	voltage [0:15] C;
+	voltage [0:15] D;
+	parameter real hi = 1.2;
+	parameter real lo = 0.0;
+	parameter real tr = 10p from (0:inf);
+	parameter real tf = 10p from (0:inf);
+	parameter real cp = 10n  from (0:inf);
+	real Atemp[0:15];
+	real Btemp[0:15];
+	real Ctemp[0:15];
+	real Dtemp[0:15];
+
+	//----------------------------------------------------------
+	// test case list
+	//----------------------------------------------------------
+	//k0: worst
+	real k0_A[0:15] ={`H1,`H0,`H0,`H0};
+	real k0_B[0:15] ={`HF,`HF,`HF,`H7};
+	real k0_C[0:15] ={`H0,`H0,`H0,`H8};
+	real k0_D[0:15] ={`H0,`H0,`H0,`H0};
+	//k1: basic1
+	real k1_A[0:15] ={`H6,`H1,`H2,`H7};
+	real k1_B[0:15] ={`H2,`H2,`H7,`H0};
+	real k1_C[0:15] ={`H4,`H3,`H7,`H5};
+	real k1_D[0:15] ={`H1,`H2,`H3,`H4};
+	//k2: basic2
+	real k2_A[0:15] ={`HD,`HA,`HE,`HD};
+	real k2_B[0:15] ={`H3,`HD,`HA,`H3};
+	real k2_C[0:15] ={`H4,`H3,`HA,`HE};
+	real k2_D[0:15] ={`H1,`HF,`HF,`H4};
+	//k3: basic3
+	real k3_A[0:15] ={`HF,`HE,`HE,`HB};
+	real k3_B[0:15] ={`HF,`HF,`HF,`HF};
+	real k3_C[0:15] ={`H4,`H3,`H2,`H1};
+	real k3_D[0:15] ={`H3,`H2,`HD,`HD};
+	//k4: basic4
+	real k4_A[0:15] ={`HE,`HC,`HA,`HF};
+	real k4_B[0:15] ={`H0,`H8,`H1,`H0};
+	real k4_C[0:15] ={`H4,`H5,`H6,`H1};
+	real k4_D[0:15] ={`H1,`H2,`H3,`H4};
+	//k5: basic5
+	real k5_A[0:15] ={`HF,`HF,`HF,`HF};
+	real k5_B[0:15] ={`H7,`H4,`H2,`H1};
+	real k5_C[0:15] ={`H0,`H3,`H0,`H0};
+	real k5_D[0:15] ={`H1,`H0,`H3,`H4};
+	//k6: basic6
+	real k6_A[0:15] ={`HE,`HD,`H2,`H3};
+	real k6_B[0:15] ={`H5,`H1,`H9,`H4};
+	real k6_C[0:15] ={`H4,`H3,`H0,`H1};
+	real k6_D[0:15] ={`H1,`H2,`H3,`H4};
+	//k7: basic7
+	real k7_A[0:15] ={`H4,`H7,`H8,`H1};
+	real k7_B[0:15] ={`H1,`H3,`H7,`H4};
+	real k7_C[0:15] ={`H4,`H3,`H5,`H4};
+	real k7_D[0:15] ={`H0,`H0,`H0,`H0};
+	//k8: basic8
+	real k8_A[0:15] ={`H3,`H7,`H5,`H1};
+	real k8_B[0:15] ={`HE,`HE,`HE,`HB};
+	real k8_C[0:15] ={`H4,`H3,`H0,`H0};
+	real k8_D[0:15] ={`H1,`H2,`H3,`H4};
+	//k9: basic9
+	real k9_A[0:15] ={`HA,`HC,`HE,`HD};
+	real k9_B[0:15] ={`HA,`HA,`HA,`HA};
+	real k9_C[0:15] ={`H4,`H0,`H0,`H0};
+	real k9_D[0:15] ={`H1,`H0,`HF,`HD};
+	//k10: random0
+	real k10_A[0:15] ={`H2,`H8,`HA,`H5};
+	real k10_B[0:15] ={`H4,`H2,`H5,`HB};
+	real k10_C[0:15] ={`H3,`HA,`H3,`H0};
+	real k10_D[0:15] ={`HA,`H1,`H0,`H1};
+	//k11: random1
+	real k11_A[0:15] ={`H6,`HF,`HB,`HE};
+	real k11_B[0:15] ={`H8,`HF,`HE,`HA};
+	real k11_C[0:15] ={`HD,`H9,`H6,`H8};
+	real k11_D[0:15] ={`H9,`HE,`H5,`H3};
+	//k12: random2
+	real k12_A[0:15] ={`H2,`H2,`H8,`H6};
+	real k12_B[0:15] ={`H2,`H0,`HA,`H7};
+	real k12_C[0:15] ={`H8,`H1,`H4,`H9};
+	real k12_D[0:15] ={`HB,`H8,`HA,`H0};
+	//k13: random3
+	real k13_A[0:15] ={`HB,`H3,`HA,`H6};
+	real k13_B[0:15] ={`H5,`HF,`H2,`HA};
+	real k13_C[0:15] ={`HB,`H4,`H5,`H2};
+	real k13_D[0:15] ={`H5,`H9,`H0,`HB};
+	//k14: random4
+	real k14_A[0:15] ={`H0,`HB,`HA,`H3};
+	real k14_B[0:15] ={`H0,`H7,`H9,`HB};
+	real k14_C[0:15] ={`HC,`H1,`HD,`H4};
+	real k14_D[0:15] ={`H3,`H3,`H9,`HE};
+	//k15: random5
+	real k15_A[0:15] ={`H8,`H0,`H4,`HB};
+	real k15_B[0:15] ={`HA,`H1,`H9,`H8};
+	real k15_C[0:15] ={`HD,`HC,`H8,`HD};
+	real k15_D[0:15] ={`H7,`HB,`H8,`H5};
+	//k16: random6
+	real k16_A[0:15] ={`H3,`HA,`H5,`HB};
+	real k16_B[0:15] ={`H4,`H2,`H0,`HE};
+	real k16_C[0:15] ={`HE,`H0,`H6,`H2};
+	real k16_D[0:15] ={`H3,`H5,`H8,`HA};
+	//k17: random7
+	real k17_A[0:15] ={`H1,`H0,`H7,`HC};
+	real k17_B[0:15] ={`H8,`HA,`H7,`H6};
+	real k17_C[0:15] ={`H7,`H7,`H3,`H3};
+	real k17_D[0:15] ={`H4,`H2,`H4,`H4};
+	//k18: random8
+	real k18_A[0:15] ={`H9,`HB,`HB,`HD};
+	real k18_B[0:15] ={`H1,`H3,`H9,`H7};
+	real k18_C[0:15] ={`H9,`H6,`H9,`HE};
+	real k18_D[0:15] ={`H5,`HA,`H5,`H0};
+	//k19: random9
+	real k19_A[0:15] ={`HA,`H4,`HE,`H2};
+	real k19_B[0:15] ={`H7,`HB,`H8,`H7};
+	real k19_C[0:15] ={`HD,`H2,`H8,`HF};
+	real k19_D[0:15] ={`HF,`HD,`HB,`H6};
+
+	//----------------------------------------------------------
+	// test case sequence
+	//----------------------------------------------------------
+	real k0_next = 1;
+	real k1_next = 2;
+	real k2_next = 3;
+	real k3_next = 4;
+	real k4_next = 5;
+	real k5_next = 6;
+	real k6_next = 7;
+	real k7_next = 8;
+	real k8_next = 9;
+	real k9_next = 10;
+	real k10_next = 11;
+	real k11_next = 12;
+	real k12_next = 13;
+	real k13_next = 14;
+	real k14_next = 15;
+	real k15_next = 16;
+	real k16_next = 17;
+	real k17_next = 18;
+	real k18_next = 19;
+	real k19_next = 0;
+
+	//----------------------------------------------------------
+	// test source
+	//----------------------------------------------------------
+	// case counter
+	real k = 0;
+	genvar i;
+	integer x;
+	analog begin
+
+		// initial value and reset
+		@(initial_step) begin
+			for(x=0;x<16;x=x+1) begin
+				Atemp[x] = lo;
+				Btemp[x] = lo;
+				Ctemp[x] = lo;
+				Dtemp[x] = lo;
+			end
+			k = 999;
+		end
+
+		// test stimulus
+		@(timer(0n,cp))	begin
+			case(k)
+			0: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k0_A[x];
+					Btemp[x] = k0_B[x];
+					Ctemp[x] = k0_C[x];
+					Dtemp[x] = k0_D[x];
+				end
+				k = k0_next;
+			end
+			1: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k1_A[x];
+					Btemp[x] = k1_B[x];
+					Ctemp[x] = k1_C[x];
+					Dtemp[x] = k1_D[x];
+				end
+				k = k1_next;
+			end
+			2: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k2_A[x];
+					Btemp[x] = k2_B[x];
+					Ctemp[x] = k2_C[x];
+					Dtemp[x] = k2_D[x];
+				end
+				k = k2_next;
+			end
+			3: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k3_A[x];
+					Btemp[x] = k3_B[x];
+					Ctemp[x] = k3_C[x];
+					Dtemp[x] = k3_D[x];
+				end
+				k = k3_next;
+			end
+			4: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k4_A[x];
+					Btemp[x] = k4_B[x];
+					Ctemp[x] = k4_C[x];
+					Dtemp[x] = k4_D[x];
+				end
+				k = k4_next;
+			end
+			5: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k5_A[x];
+					Btemp[x] = k5_B[x];
+					Ctemp[x] = k5_C[x];
+					Dtemp[x] = k5_D[x];
+				end
+				k = k5_next;
+			end
+			6: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k6_A[x];
+					Btemp[x] = k6_B[x];
+					Ctemp[x] = k6_C[x];
+					Dtemp[x] = k6_D[x];
+				end
+				k = k6_next;
+			end
+			7: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k7_A[x];
+					Btemp[x] = k7_B[x];
+					Ctemp[x] = k7_C[x];
+					Dtemp[x] = k7_D[x];
+				end
+				k = k7_next;
+			end
+			8: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k8_A[x];
+					Btemp[x] = k8_B[x];
+					Ctemp[x] = k8_C[x];
+					Dtemp[x] = k8_D[x];
+				end
+				k = k8_next;
+			end
+			9: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k9_A[x];
+					Btemp[x] = k9_B[x];
+					Ctemp[x] = k9_C[x];
+					Dtemp[x] = k9_D[x];
+				end
+				k = k9_next;
+			end
+			10: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k10_A[x];
+					Btemp[x] = k10_B[x];
+					Ctemp[x] = k10_C[x];
+					Dtemp[x] = k10_D[x];
+				end
+				k = k10_next;
+			end
+			11: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k11_A[x];
+					Btemp[x] = k11_B[x];
+					Ctemp[x] = k11_C[x];
+					Dtemp[x] = k11_D[x];
+				end
+				k = k11_next;
+			end
+			12: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k12_A[x];
+					Btemp[x] = k12_B[x];
+					Ctemp[x] = k12_C[x];
+					Dtemp[x] = k12_D[x];
+				end
+				k = k12_next;
+			end
+			13: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k13_A[x];
+					Btemp[x] = k13_B[x];
+					Ctemp[x] = k13_C[x];
+					Dtemp[x] = k13_D[x];
+				end
+				k = k13_next;
+			end
+			14: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k14_A[x];
+					Btemp[x] = k14_B[x];
+					Ctemp[x] = k14_C[x];
+					Dtemp[x] = k14_D[x];
+				end
+				k = k14_next;
+			end
+			15: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k15_A[x];
+					Btemp[x] = k15_B[x];
+					Ctemp[x] = k15_C[x];
+					Dtemp[x] = k15_D[x];
+				end
+				k = k15_next;
+			end
+			16: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k16_A[x];
+					Btemp[x] = k16_B[x];
+					Ctemp[x] = k16_C[x];
+					Dtemp[x] = k16_D[x];
+				end
+				k = k16_next;
+			end
+			17: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k17_A[x];
+					Btemp[x] = k17_B[x];
+					Ctemp[x] = k17_C[x];
+					Dtemp[x] = k17_D[x];
+				end
+				k = k17_next;
+			end
+			18: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k18_A[x];
+					Btemp[x] = k18_B[x];
+					Ctemp[x] = k18_C[x];
+					Dtemp[x] = k18_D[x];
+				end
+				k = k18_next;
+			end
+			19: begin
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = k19_A[x];
+					Btemp[x] = k19_B[x];
+					Ctemp[x] = k19_C[x];
+					Dtemp[x] = k19_D[x];
+				end
+				k = k19_next;
+			end
+			default: begin // used for reset
+				for(x=0;x<16;x=x+1) begin
+					Atemp[x] = lo;
+					Btemp[x] = lo;
+					Ctemp[x] = lo;
+					Dtemp[x] = lo;
+				end
+				k = 0;
+			end
+			endcase
+		end
+
+		// output DAC
+		for(i=0;i<16;i=i+1) begin
+			V(A[i]) <+ transition(Atemp[i], 0, tr, tf);
+			V(B[i]) <+ transition(Btemp[i], 0, tr, tf);
+			V(C[i]) <+ transition(Ctemp[i], 0, tr, tf);
+			V(D[i]) <+ transition(Dtemp[i], 0, tr, tf);
+		end
+
+	end
+
+endmodule

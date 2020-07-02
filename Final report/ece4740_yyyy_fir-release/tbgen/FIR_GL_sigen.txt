@@ -1,0 +1,563 @@
+// VerilogA for ece4740_yyyy_fir, multb_sigen, veriloga
+`include "constants.vams"
+`include "disciplines.vams"
+
+// hexdecimal codebook 
+`define H0  lo,lo,lo,lo
+`define H1  hi,lo,lo,lo
+`define H2  lo,hi,lo,lo
+`define H3  hi,hi,lo,lo
+`define H4  lo,lo,hi,lo
+`define H5  hi,lo,hi,lo
+`define H6  lo,hi,hi,lo
+`define H7  hi,hi,hi,lo
+`define H8  lo,lo,lo,hi
+`define H9  hi,lo,lo,hi
+`define HA  lo,hi,lo,hi
+`define HB  hi,hi,lo,hi
+`define HC  lo,lo,hi,hi
+`define HD  hi,lo,hi,hi
+`define HE  lo,hi,hi,hi
+`define HF  hi,hi,hi,hi
+
+module FIR_GL_sigen(X,RST_N,B0,B1,B2,B3);
+	output [0:15] X;
+	output [0:7] B0;
+	output [0:7] B1;
+	output [0:7] B2;
+	output [0:7] B3;
+	output RST_N;
+	voltage [0:15] X;
+	voltage [0:7] B0;
+	voltage [0:7] B1;
+	voltage [0:7] B2;
+	voltage [0:7] B3;
+	voltage RST_N;
+	parameter real hi = 1.2;
+	parameter real lo = 0.0;
+	parameter real tr = 10p from (0:inf);
+	parameter real tf = 10p from (0:inf);
+	parameter real cp = 10000n  from (0:inf);
+	real Xtemp[0:15];
+	real B0temp[0:7];
+	real B1temp[0:7];
+	real B2temp[0:7];
+	real B3temp[0:7];
+	real RST_Ntemp;
+
+	//----------------------------------------------------------
+	// test case list
+	//----------------------------------------------------------
+	// set bs
+	real v_B0[0:7] ={`H8,`H0};
+	real v_B1[0:7] ={`H6,`H1};
+	real v_B2[0:7] ={`H6,`H1};
+	real v_B3[0:7] ={`H8,`H0};
+	//k0: reset
+	real k0_X[0:15] ={`H0,`H0,`H0,`H0};
+	real k0_RST_N =lo;
+	//k1: sap100.0k_sine_10.0k_0
+	real k1_X[0:15] ={`H0,`H0,`H4,`H0};
+	real k1_RST_N =hi;
+	//k2: sap100.0k_sine_10.0k_1
+	real k2_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k2_RST_N =hi;
+	//k3: sap100.0k_sine_10.0k_2
+	real k3_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k3_RST_N =hi;
+	//k4: sap100.0k_sine_10.0k_3
+	real k4_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k4_RST_N =hi;
+	//k5: sap100.0k_sine_10.0k_4
+	real k5_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k5_RST_N =hi;
+	//k6: sap100.0k_sine_10.0k_5
+	real k6_X[0:15] ={`H0,`H0,`H4,`H0};
+	real k6_RST_N =hi;
+	//k7: sap100.0k_sine_10.0k_6
+	real k7_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k7_RST_N =hi;
+	//k8: sap100.0k_sine_10.0k_7
+	real k8_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k8_RST_N =hi;
+	//k9: sap100.0k_sine_10.0k_8
+	real k9_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k9_RST_N =hi;
+	//k10: sap100.0k_sine_10.0k_9
+	real k10_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k10_RST_N =hi;
+	//k11: sap100.0k_sine_10.0k_10
+	real k11_X[0:15] ={`HF,`HF,`H3,`H0};
+	real k11_RST_N =hi;
+	//k12: sap100.0k_sine_10.0k_11
+	real k12_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k12_RST_N =hi;
+	//k13: sap100.0k_sine_10.0k_12
+	real k13_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k13_RST_N =hi;
+	//k14: sap100.0k_sine_10.0k_13
+	real k14_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k14_RST_N =hi;
+	//k15: sap100.0k_sine_10.0k_14
+	real k15_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k15_RST_N =hi;
+	//k16: sap100.0k_sine_10.0k_15
+	real k16_X[0:15] ={`H0,`H0,`H4,`H0};
+	real k16_RST_N =hi;
+	//k17: sap100.0k_sine_10.0k_16
+	real k17_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k17_RST_N =hi;
+	//k18: sap100.0k_sine_10.0k_17
+	real k18_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k18_RST_N =hi;
+	//k19: sap100.0k_sine_10.0k_18
+	real k19_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k19_RST_N =hi;
+	//k20: sap100.0k_sine_10.0k_19
+	real k20_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k20_RST_N =hi;
+	//k21: sap100.0k_sine_10.0k_20
+	real k21_X[0:15] ={`HF,`HF,`H3,`H0};
+	real k21_RST_N =hi;
+	//k22: sap100.0k_sine_10.0k_21
+	real k22_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k22_RST_N =hi;
+	//k23: sap100.0k_sine_10.0k_22
+	real k23_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k23_RST_N =hi;
+	//k24: sap100.0k_sine_10.0k_23
+	real k24_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k24_RST_N =hi;
+	//k25: sap100.0k_sine_10.0k_24
+	real k25_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k25_RST_N =hi;
+	//k26: sap100.0k_sine_10.0k_25
+	real k26_X[0:15] ={`H0,`H0,`H4,`H0};
+	real k26_RST_N =hi;
+	//k27: sap100.0k_sine_10.0k_26
+	real k27_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k27_RST_N =hi;
+	//k28: sap100.0k_sine_10.0k_27
+	real k28_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k28_RST_N =hi;
+	//k29: sap100.0k_sine_10.0k_28
+	real k29_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k29_RST_N =hi;
+	//k30: sap100.0k_sine_10.0k_29
+	real k30_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k30_RST_N =hi;
+	//k31: sap100.0k_sine_10.0k_30
+	real k31_X[0:15] ={`HF,`HF,`H3,`H0};
+	real k31_RST_N =hi;
+	//k32: sap100.0k_sine_10.0k_31
+	real k32_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k32_RST_N =hi;
+	//k33: sap100.0k_sine_10.0k_32
+	real k33_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k33_RST_N =hi;
+	//k34: sap100.0k_sine_10.0k_33
+	real k34_X[0:15] ={`HD,`HC,`H7,`H0};
+	real k34_RST_N =hi;
+	//k35: sap100.0k_sine_10.0k_34
+	real k35_X[0:15] ={`H9,`H5,`H6,`H0};
+	real k35_RST_N =hi;
+	//k36: sap100.0k_sine_10.0k_35
+	real k36_X[0:15] ={`H0,`H0,`H4,`H0};
+	real k36_RST_N =hi;
+	//k37: sap100.0k_sine_10.0k_36
+	real k37_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k37_RST_N =hi;
+	//k38: sap100.0k_sine_10.0k_37
+	real k38_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k38_RST_N =hi;
+	//k39: sap100.0k_sine_10.0k_38
+	real k39_X[0:15] ={`H2,`H3,`H0,`H0};
+	real k39_RST_N =hi;
+	//k40: sap100.0k_sine_10.0k_39
+	real k40_X[0:15] ={`H6,`HA,`H1,`H0};
+	real k40_RST_N =hi;
+
+	//----------------------------------------------------------
+	// test case sequence
+	//----------------------------------------------------------
+	real k0_next = 1;
+	real k1_next = 2;
+	real k2_next = 3;
+	real k3_next = 4;
+	real k4_next = 5;
+	real k5_next = 6;
+	real k6_next = 7;
+	real k7_next = 8;
+	real k8_next = 9;
+	real k9_next = 10;
+	real k10_next = 11;
+	real k11_next = 12;
+	real k12_next = 13;
+	real k13_next = 14;
+	real k14_next = 15;
+	real k15_next = 16;
+	real k16_next = 17;
+	real k17_next = 18;
+	real k18_next = 19;
+	real k19_next = 20;
+	real k20_next = 21;
+	real k21_next = 22;
+	real k22_next = 23;
+	real k23_next = 24;
+	real k24_next = 25;
+	real k25_next = 26;
+	real k26_next = 27;
+	real k27_next = 28;
+	real k28_next = 29;
+	real k29_next = 30;
+	real k30_next = 31;
+	real k31_next = 32;
+	real k32_next = 33;
+	real k33_next = 34;
+	real k34_next = 35;
+	real k35_next = 36;
+	real k36_next = 37;
+	real k37_next = 38;
+	real k38_next = 39;
+	real k39_next = 40;
+	real k40_next = 0;
+
+	//----------------------------------------------------------
+	// test source
+	//----------------------------------------------------------
+	// case counter
+	real k = 0;
+	genvar i;
+	integer x;
+	analog begin
+
+		// initial value and reset
+		@(initial_step) begin
+			for(x=0;x<16;x=x+1) begin
+				Xtemp[x] = lo;
+			end
+			RST_Ntemp = lo;
+			for(x=0;x<8;x=x+1) begin
+				B0temp[x] = v_B0[x];
+				B1temp[x] = v_B1[x];
+				B2temp[x] = v_B2[x];
+				B3temp[x] = v_B3[x];
+			end
+			k = 999;
+		end
+
+		// test stimulus
+		@(timer(0n,cp))	begin
+			case(k)
+			0: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k0_X[x];
+				end
+			RST_Ntemp = k0_RST_N;
+				k = k0_next;
+			end
+			1: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k1_X[x];
+				end
+			RST_Ntemp = k1_RST_N;
+				k = k1_next;
+			end
+			2: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k2_X[x];
+				end
+			RST_Ntemp = k2_RST_N;
+				k = k2_next;
+			end
+			3: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k3_X[x];
+				end
+			RST_Ntemp = k3_RST_N;
+				k = k3_next;
+			end
+			4: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k4_X[x];
+				end
+			RST_Ntemp = k4_RST_N;
+				k = k4_next;
+			end
+			5: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k5_X[x];
+				end
+			RST_Ntemp = k5_RST_N;
+				k = k5_next;
+			end
+			6: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k6_X[x];
+				end
+			RST_Ntemp = k6_RST_N;
+				k = k6_next;
+			end
+			7: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k7_X[x];
+				end
+			RST_Ntemp = k7_RST_N;
+				k = k7_next;
+			end
+			8: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k8_X[x];
+				end
+			RST_Ntemp = k8_RST_N;
+				k = k8_next;
+			end
+			9: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k9_X[x];
+				end
+			RST_Ntemp = k9_RST_N;
+				k = k9_next;
+			end
+			10: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k10_X[x];
+				end
+			RST_Ntemp = k10_RST_N;
+				k = k10_next;
+			end
+			11: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k11_X[x];
+				end
+			RST_Ntemp = k11_RST_N;
+				k = k11_next;
+			end
+			12: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k12_X[x];
+				end
+			RST_Ntemp = k12_RST_N;
+				k = k12_next;
+			end
+			13: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k13_X[x];
+				end
+			RST_Ntemp = k13_RST_N;
+				k = k13_next;
+			end
+			14: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k14_X[x];
+				end
+			RST_Ntemp = k14_RST_N;
+				k = k14_next;
+			end
+			15: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k15_X[x];
+				end
+			RST_Ntemp = k15_RST_N;
+				k = k15_next;
+			end
+			16: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k16_X[x];
+				end
+			RST_Ntemp = k16_RST_N;
+				k = k16_next;
+			end
+			17: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k17_X[x];
+				end
+			RST_Ntemp = k17_RST_N;
+				k = k17_next;
+			end
+			18: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k18_X[x];
+				end
+			RST_Ntemp = k18_RST_N;
+				k = k18_next;
+			end
+			19: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k19_X[x];
+				end
+			RST_Ntemp = k19_RST_N;
+				k = k19_next;
+			end
+			20: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k20_X[x];
+				end
+			RST_Ntemp = k20_RST_N;
+				k = k20_next;
+			end
+			21: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k21_X[x];
+				end
+			RST_Ntemp = k21_RST_N;
+				k = k21_next;
+			end
+			22: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k22_X[x];
+				end
+			RST_Ntemp = k22_RST_N;
+				k = k22_next;
+			end
+			23: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k23_X[x];
+				end
+			RST_Ntemp = k23_RST_N;
+				k = k23_next;
+			end
+			24: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k24_X[x];
+				end
+			RST_Ntemp = k24_RST_N;
+				k = k24_next;
+			end
+			25: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k25_X[x];
+				end
+			RST_Ntemp = k25_RST_N;
+				k = k25_next;
+			end
+			26: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k26_X[x];
+				end
+			RST_Ntemp = k26_RST_N;
+				k = k26_next;
+			end
+			27: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k27_X[x];
+				end
+			RST_Ntemp = k27_RST_N;
+				k = k27_next;
+			end
+			28: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k28_X[x];
+				end
+			RST_Ntemp = k28_RST_N;
+				k = k28_next;
+			end
+			29: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k29_X[x];
+				end
+			RST_Ntemp = k29_RST_N;
+				k = k29_next;
+			end
+			30: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k30_X[x];
+				end
+			RST_Ntemp = k30_RST_N;
+				k = k30_next;
+			end
+			31: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k31_X[x];
+				end
+			RST_Ntemp = k31_RST_N;
+				k = k31_next;
+			end
+			32: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k32_X[x];
+				end
+			RST_Ntemp = k32_RST_N;
+				k = k32_next;
+			end
+			33: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k33_X[x];
+				end
+			RST_Ntemp = k33_RST_N;
+				k = k33_next;
+			end
+			34: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k34_X[x];
+				end
+			RST_Ntemp = k34_RST_N;
+				k = k34_next;
+			end
+			35: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k35_X[x];
+				end
+			RST_Ntemp = k35_RST_N;
+				k = k35_next;
+			end
+			36: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k36_X[x];
+				end
+			RST_Ntemp = k36_RST_N;
+				k = k36_next;
+			end
+			37: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k37_X[x];
+				end
+			RST_Ntemp = k37_RST_N;
+				k = k37_next;
+			end
+			38: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k38_X[x];
+				end
+			RST_Ntemp = k38_RST_N;
+				k = k38_next;
+			end
+			39: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k39_X[x];
+				end
+			RST_Ntemp = k39_RST_N;
+				k = k39_next;
+			end
+			40: begin
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = k40_X[x];
+				end
+			RST_Ntemp = k40_RST_N;
+				k = k40_next;
+			end
+			default: begin // used for reset
+				for(x=0;x<16;x=x+1) begin
+					Xtemp[x] = lo;
+				end
+			RST_Ntemp = lo;
+				k = 0;
+			end
+			endcase
+		end
+
+		// output DAC
+		for(i=0;i<16;i=i+1) begin
+			V(X[i]) <+ transition(Xtemp[i], 0, tr, tf);
+		end
+		for(i=0;i<8;i=i+1) begin
+			V(B0[i]) <+ transition(B0temp[i], 0, tr, tf);
+			V(B1[i]) <+ transition(B1temp[i], 0, tr, tf);
+			V(B2[i]) <+ transition(B2temp[i], 0, tr, tf);
+			V(B3[i]) <+ transition(B3temp[i], 0, tr, tf);
+		end
+		V(RST_N) <+ transition(RST_Ntemp, 0, tr, tf);
+
+	end
+
+endmodule
